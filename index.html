@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>Fantasy MMA – 2025 Season</title>
 
+  <!-- Supabase client -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
   <style>
@@ -41,6 +42,7 @@
   </table>
 
   <script>
+    // 🔹 Replace with your Supabase project info
     const SUPABASE_URL = "https://hbhbwuijvbkenncwtbfw.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhiaGJ3dWlqdmJrZW5uY3d0YmZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyOTg5NzksImV4cCI6MjA4Mjg3NDk3OX0.YwKDkbODTXNbQySb8O41MFH1C4dTKnGQ1jZqn3_-orM";
 
@@ -49,23 +51,24 @@
       SUPABASE_ANON_KEY
     );
 
-    let allData = []; // Store all rows globally
+    let allData = []; // store all rows globally
 
-    // Weight order from heaviest to lightest
-    const weightOrder = [
-      "Heavyweight",
-      "L. Heavyweight",
-      "Middleweight",
-      "Welterweight",
-      "Lightweight",
-      "Featherweight",
-      "Bantamweight",
-      "Flyweight",
-      "W. Bantamweight",
-      "W. Flyweight",
-      "W. Straweight"
-    ];
+    // Weight rank mapping (heaviest → lightest)
+    const weightRank = {
+      "Heavyweight": 1,
+      "L. Heavyweight": 2,
+      "Middleweight": 3,
+      "Welterweight": 4,
+      "Lightweight": 5,
+      "Featherweight": 6,
+      "Bantamweight": 7,
+      "Flyweight": 8,
+      "W. Bantamweight": 9,
+      "W. Flyweight": 10,
+      "W. Straweight": 11
+    };
 
+    // Load data from Supabase
     async function loadData() {
       const { data, error } = await supabaseClient
         .from("season_fighter_summary")
@@ -78,12 +81,12 @@
         return;
       }
 
-      allData = data; // Save all rows
-
+      allData = data; // save rows
       populateTeamDropdown();
-      renderTable("All"); // Show all by default
+      renderTable("All"); // show all teams by default
     }
 
+    // Populate dropdown with team names
     function populateTeamDropdown() {
       const select = document.getElementById("teamSelect");
       const teams = [...new Set(allData.map(row => row.team_name))].sort();
@@ -100,12 +103,13 @@
       });
     }
 
+    // Render table based on selected team
     function renderTable(selectedTeam) {
       const tbody = document.querySelector("tbody");
       tbody.innerHTML = "";
 
-      let filtered = selectedTeam === "All" 
-        ? [...allData] 
+      let filtered = selectedTeam === "All"
+        ? [...allData]
         : allData.filter(row => row.team_name === selectedTeam);
 
       // Sorting
@@ -113,8 +117,8 @@
         // Sort by points descending
         filtered.sort((a, b) => b.points_total - a.points_total);
       } else {
-        // Sort by weight class
-        filtered.sort((a, b) => weightOrder.indexOf(a.division) - weightOrder.indexOf(b.division));
+        // Sort by weight rank heaviest → lightest
+        filtered.sort((a, b) => (weightRank[a.division] || 99) - (weightRank[b.division] || 99));
       }
 
       filtered.forEach(row => {
@@ -129,9 +133,11 @@
       });
     }
 
+    // Load data on page load
     loadData();
   </script>
 
 </body>
 </html>
+
 
