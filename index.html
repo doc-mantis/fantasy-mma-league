@@ -197,6 +197,24 @@
     }
 
     loadData();
+
+// Realtime updates
+supabaseClient
+  .channel("season-fighter-updates")
+  .on(
+    "postgres_changes",
+    {
+      event: "*",
+      schema: "public",
+      table: "season_fighter_summary"
+    },
+    () => {
+      console.log("Realtime update received");
+      loadData();
+    }
+  )
+  .subscribe();
+
   </script>
 
 </body>
