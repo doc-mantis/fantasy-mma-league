@@ -69,7 +69,7 @@
 
     async function loadData() {
       const { data, error } = await supabaseClient
-        .from("fighters")
+        .from("season_fighter_summary")
         .select("*")
         .eq("season", 2025)
         .order("team_name", { ascending: true });
