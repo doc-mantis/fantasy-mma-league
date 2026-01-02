@@ -63,7 +63,7 @@
 
     let allData = [];
 
-    // Weight order from heaviest → lightest, utilities last
+    // Weight order from heaviest → lightest (utilities will be forced to bottom)
     const weightRank = {
       "Heavyweight": 1,
       "L. Heavyweight": 2,
@@ -76,7 +76,7 @@
       "W. Bantamweight": 9,
       "W. Flyweight": 10,
       "W. Straweight": 11,
-      "M Utility": 12,       // always last
+      "M Utility": 12,  // fallback if needed
       "W Utility": 13
     };
 
@@ -127,7 +127,6 @@
         teamTotals[row.team_name] += parseFloat(row.points_total || 0);
       });
 
-      // Convert to array and sort descending
       const sortedTeams = Object.entries(teamTotals)
         .sort((a, b) => b[1] - a[1]);
 
@@ -152,8 +151,18 @@
         filtered.sort((a, b) => b.points_total - a.points_total);
       } else {
         filtered.sort((a, b) => {
-          const rankA = weightRank[a.division.trim()] ?? 99;
-          const rankB = weightRank[b.division.trim()] ?? 99;
+          const aDiv = a.division.trim();
+          const bDiv = b.division.trim();
+
+          // Force utility fighters to the bottom
+          const aIsUtility = aDiv.endsWith("Utility") ? 1 : 0;
+          const bIsUtility = bDiv.endsWith("Utility") ? 1 : 0;
+          if (aIsUtility && !bIsUtility) return 1;
+          if (!aIsUtility && bIsUtility) return -1;
+
+          // Otherwise, sort by weight rank
+          const rankA = weightRank[aDiv] ?? 99;
+          const rankB = weightRank[bDiv] ?? 99;
           return rankA - rankB;
         });
       }
