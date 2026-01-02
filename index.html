@@ -10,7 +10,6 @@
     th { background-color: #eee; }
     h2 { margin-top: 40px; }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
 </head>
 <body>
   <h1>Fantasy MMA – 2025 Season</h1>
@@ -42,11 +41,14 @@
     <tbody></tbody>
   </table>
 
-  <script>
+  <!-- Supabase module script -->
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.esm.js';
+
     // --- Supabase connection ---
     const SUPABASE_URL = "https://hbhbwuijvbkenncwtbfw.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhiaGJ3dWlqdmJrZW5uY3d0YmZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyOTg5NzksImV4cCI6MjA4Mjg3NDk3OX0.YwKDkbODTXNbQySb8O41MFH1C4dTKnGQ1jZqn3_-orM";
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
     // Division order for sorting
     const divisionOrder = [
