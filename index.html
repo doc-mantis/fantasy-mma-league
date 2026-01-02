@@ -50,14 +50,16 @@
     <tbody></tbody>
   </table>
 
-  <!-- Supabase CDN -->
+  <!-- Supabase CDN (only once!) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script>
-    // Initialize Supabase using the global object (no const/let)
-    supabase = supabase.createClient(
-      "https://hbhbwuijvbkenncwtbfw.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhiaGJ3dWlqdmJrZW5uY3d0YmZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyOTg5NzksImV4cCI6MjA4Mjg3NDk3OX0.YwKDkbODTXNbQySb8O41MFH1C4dTKnGQ1jZqn3_-orM"
-    );
+    // Initialize Supabase safely (avoid redeclaration)
+    if (!window.supabaseClient) {
+      window.supabaseClient = supabase.createClient(
+        "https://hbhbwuijvbkenncwtbfw.supabase.co",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhiaGJ3dWlqdmJrZW5uY3d0YmZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyOTg5NzksImV4cCI6MjA4Mjg3NDk3OX0.YwKDkbODTXNbQySb8O41MFH1C4dTKnGQ1jZqn3_-orM"
+      );
+    }
 
     const divisionOrder = [
       "Heavyweight", "L. Heavyweight", "Middleweight", "Welterweight",
@@ -67,7 +69,7 @@
     ];
 
     async function loadData() {
-      const { data: fighters, error } = await supabase
+      const { data: fighters, error } = await window.supabaseClient
         .from('fighter_points_2025')
         .select('*');
 
