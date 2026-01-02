@@ -8,8 +8,9 @@
     table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
     th { background: #eee; }
-    .team-header { cursor: pointer; background: #ddd; padding: 10px; margin-top: 10px; }
-    .fighter-table { display: none; margin-bottom: 20px; }
+    .team-header { cursor: pointer; background: #ddd; padding: 10px; margin-top: 10px; font-weight: bold; }
+    .fighter-table { display: none; margin-bottom: 20px; width: 100%; }
+    .error { color: red; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -25,15 +26,20 @@
 
   <h2>Teams & Fighters</h2>
   <div id="teams-container"></div>
+  <div id="error-message" class="error"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script>
+    // -----------------------------
+    // Replace these with your keys
+    // -----------------------------
     const SUPABASE_URL = "https://hbhbwuijvbkenncwtbfw.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhiaGJ3dWlqdmJrZW5uY3d0YmZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyOTg5NzksImV4cCI6MjA4Mjg3NDk3OX0.YwKDkbODTXNbQySb8O41MFH1C4dTKnGQ1jZqn3_-orM";
 
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Use a different variable name to avoid redeclaration
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Weight class order from heaviest → lightest
+    // Heaviest → lightest order (utility last)
     const weightOrder = [
       "Heavyweight","L. Heavyweight","Middleweight","Welterweight",
       "Lightweight","Featherweight","Bantamweight","Flyweight",
@@ -41,14 +47,22 @@
     ];
 
     async function loadData() {
-      // Load team leaderboard
-      const { data: teams, error: teamError } = await supabase
+      const errorDiv = document.getElementById('error-message');
+      errorDiv.textContent = '';
+
+      // Fetch team leaderboard
+      const { data: teams, error: teamError } = await supabaseClient
         .from('season_team_summary')
         .select('*')
         .order('team_points', { ascending: false });
 
-      if (teamError) { console.error(teamError); return; }
+      if (teamError) {
+        console.error(teamError);
+        errorDiv.textContent = `Error fetching team data: ${teamError.message}`;
+        return;
+      }
 
+      // Populate team leaderboard
       const teamTbody = document.querySelector('#team-table tbody');
       teamTbody.innerHTML = '';
       teams.forEach(team => {
@@ -57,12 +71,16 @@
         teamTbody.appendChild(tr);
       });
 
-      // Load fighters
-      const { data: fighters, error: fighterError } = await supabase
+      // Fetch fighters
+      const { data: fighters, error: fighterError } = await supabaseClient
         .from('season_fighter_summary')
         .select('*');
 
-      if (fighterError) { console.error(fighterError); return; }
+      if (fighterError) {
+        console.error(fighterError);
+        errorDiv.textContent = `Error fetching fighters: ${fighterError.message}`;
+        return;
+      }
 
       // Group fighters by team
       const fightersByTeam = {};
@@ -71,13 +89,13 @@
         fightersByTeam[f.team_name].push(f);
       });
 
-      const container = document.querySelector('#teams-container');
+      const container = document.getElementById('teams-container');
       container.innerHTML = '';
 
       for (const team of teams) {
         const teamDiv = document.createElement('div');
 
-        // Team header (click to toggle)
+        // Collapsible header
         const header = document.createElement('div');
         header.className = 'team-header';
         header.textContent = `${team.team_name} (${team.team_points} pts)`;
@@ -94,12 +112,12 @@
 
         const tbody = document.createElement('tbody');
 
-        // Sort fighters: heaviest → lightest, utility at bottom, then by points descending
-        const sortedFighters = fightersByTeam[team.team_name].sort((a,b) => {
+        // Sort: weight order → utility last → points descending
+        const sortedFighters = (fightersByTeam[team.team_name] || []).sort((a,b) => {
           const aIndex = weightOrder.indexOf(a.roster_slot);
           const bIndex = weightOrder.indexOf(b.roster_slot);
-          if (aIndex !== bIndex) return aIndex - bIndex; // weight order
-          return b.points_total - a.points_total;       // points within weight
+          if (aIndex !== bIndex) return aIndex - bIndex; 
+          return b.points_total - a.points_total;
         });
 
         sortedFighters.forEach(f => {
@@ -116,7 +134,8 @@
     }
 
     loadData();
-    setInterval(loadData, 30000);
+    setInterval(loadData, 30000); // refresh every 30 seconds
   </script>
 </body>
 </html>
+
