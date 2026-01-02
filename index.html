@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Fantasy MMA League</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #e5e7eb;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th, td {
+      border: 1px solid #334155;
+      padding: 8px;
+      text-align: left;
+    }
+
+    th {
+      background: #1e293b;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Fantasy MMA – 2025 Season</h1>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Team</th>
+        <th>Division</th>
+        <th>Fighter</th>
+        <th>Points</th>
+      </tr>
+    </thead>
+    <tbody id="data">
+      <!-- Data will go here -->
+    </tbody>
+  </table>
+
+  <script>
+    // Temporary test data (no Supabase yet)
+    const testData = [
+      { team: "Shane", division: "Heavyweight", fighter: "Kennedy Nzechukwu", points: 0 },
+      { team: "Dylan", division: "Heavyweight", fighter: "Sergei Pavlovich", points: 2 },
+      { team: "Ken", division: "M Utility", fighter: "Merab Dvalishvili", points: 6.25 },
+      { team: "Brent", division: "M Utility", fighter: "Renier de Ridder", points: 3.5 }
+    ];
+
+    const tbody = document.getElementById("data");
+
+    testData.forEach(row => {
+      const tr = document.createElement("tr");
+
+      tr.innerHTML = `
+        <td>${row.team}</td>
+        <td>${row.division}</td>
+        <td>${row.fighter}</td>
+        <td>${row.points}</td>
+      `;
+
+      tbody.appendChild(tr);
+    });
+  </script>
+
+</body>
+</html>
