@@ -1,151 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Fantasy MMA – 2025 Season</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
-    th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; }
-    th { background-color: #eee; }
-    h2 { margin-top: 40px; }
-    @media (max-width: 600px) {
-      table, thead, tbody, th, td, tr { display: block; width: 100%; }
-      th { display: none; }
-      td { border: none; padding: 8px; }
-      td::before { 
-        content: attr(data-label); 
-        font-weight: bold; 
-        display: inline-block;
-        width: 120px;
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Fantasy MMA – 2025 Season</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; }
+  table { border-collapse: collapse; width: 100%; margin-bottom: 30px; }
+  th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; }
+  th { background-color: #eee; }
+  a { text-decoration: none; color: blue; }
+</style>
 </head>
 <body>
-  <h1>Fantasy MMA – 2025 Season</h1>
 
-  <h2>Team Leaderboard</h2>
-  <table id="teamLeaderboard">
-    <thead>
-      <tr><th>Team</th><th>Total Points</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+<h1>Fantasy MMA – 2025 Season</h1>
 
-  <h2>Teams & Fighters</h2>
-  <div id="teamsContainer"></div>
+<h2>Team Leaderboard</h2>
+<table id="teamLeaderboard">
+  <thead><tr><th>Team</th><th>Total Points</th></tr></thead>
+  <tbody></tbody>
+</table>
 
-  <h2>All Fighters by Points</h2>
-  <table id="allFighters">
-    <thead>
-      <tr>
-        <th>Fighter</th>
-        <th>Team</th>
-        <th>Division</th>
-        <th>Points</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+<h2>All Fighters by Points</h2>
+<table id="allFighters">
+  <thead><tr><th>Fighter</th><th>Team</th><th>Division</th><th>Points</th></tr></thead>
+  <tbody></tbody>
+</table>
 
-  <!-- Supabase CDN (only once!) -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-  <script>
-    // Initialize Supabase safely (avoid redeclaration)
-    if (!window.supabaseClient) {
-      window.supabaseClient = supabase.createClient(
-        "https://hbhbwuijvbkenncwtbfw.supabase.co",
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhiaGJ3dWlqdmJrZW5uY3d0YmZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyOTg5NzksImV4cCI6MjA4Mjg3NDk3OX0.YwKDkbODTXNbQySb8O41MFH1C4dTKnGQ1jZqn3_-orM"
-      );
-    }
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script>
+const supabaseClient = supabase.createClient("https://hbhbwuijvbkenncwtbfw.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhiaGJ3dWlqdmJrZW5uY3d0YmZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyOTg5NzksImV4cCI6MjA4Mjg3NDk3OX0.YwKDkbODTXNbQySb8O41MFH1C4dTKnGQ1jZqn3_-orM");
 
-    const divisionOrder = [
-      "Heavyweight", "L. Heavyweight", "Middleweight", "Welterweight",
-      "Lightweight", "Featherweight", "Bantamweight", "Flyweight",
-      "W. Bantamweight", "W. Flyweight", "W. Straweight",
-      "M Utility", "W Utility"
-    ];
+async function loadMainPage() {
+  const { data: fighters, error } = await supabaseClient.from('fighter_points_2025').select('*');
+  if (error) return console.error(error);
 
-    async function loadData() {
-      const { data: fighters, error } = await window.supabaseClient
-        .from('fighter_points_2025')
-        .select('*');
+  // --- TEAM LEADERBOARD ---
+  const teamTotals = {};
+  fighters.forEach(f => teamTotals[f.team_name] = (teamTotals[f.team_name]||0)+parseFloat(f.points_total));
+  const tbody = document.querySelector("#teamLeaderboard tbody");
+  tbody.innerHTML = "";
+  Object.entries(teamTotals)
+    .sort((a,b)=>b[1]-a[1])
+    .forEach(([team, points])=>{
+      tbody.innerHTML += `<tr>
+        <td><a href="teams/${team.toLowerCase()}.html">${team}</a></td>
+        <td>${points.toFixed(2)}</td>
+      </tr>`;
+    });
 
-      if (error) {
-        console.error("Supabase fetch error:", error);
-        return;
-      }
+  // --- ALL FIGHTERS BY POINTS ---
+  const fightersTbody = document.querySelector("#allFighters tbody");
+  fightersTbody.innerHTML = "";
+  fighters.sort((a,b)=>b.points_total - a.points_total).forEach(f=>{
+    fightersTbody.innerHTML += `<tr>
+      <td>${f.fighter_name}</td>
+      <td>${f.team_name}</td>
+      <td>${f.roster_slot}</td>
+      <td>${parseFloat(f.points_total).toFixed(2)}</td>
+    </tr>`;
+  });
+}
 
-      // --- TEAM LEADERBOARD ---
-      const teamTotals = {};
-      fighters.forEach(f => {
-        if (!teamTotals[f.team_name]) teamTotals[f.team_name] = 0;
-        teamTotals[f.team_name] += parseFloat(f.points_total);
-      });
-
-      const leaderboardBody = document.querySelector("#teamLeaderboard tbody");
-      leaderboardBody.innerHTML = "";
-      Object.entries(teamTotals)
-        .sort((a,b) => b[1]-a[1])
-        .forEach(([team, points]) => {
-          const row = document.createElement("tr");
-          row.innerHTML = `<td>${team}</td><td>${points.toFixed(2)}</td>`;
-          leaderboardBody.appendChild(row);
-        });
-
-      // --- TEAMS & FIGHTERS ---
-      const teamsContainer = document.getElementById("teamsContainer");
-      teamsContainer.innerHTML = "";
-
-      const teams = [...new Set(fighters.map(f => f.team_name))];
-      teams.forEach(team => {
-        const teamFighters = fighters
-          .filter(f => f.team_name === team)
-          .sort((a,b) => {
-            const aIndex = divisionOrder.indexOf(a.roster_slot);
-            const bIndex = divisionOrder.indexOf(b.roster_slot);
-            return aIndex - bIndex || b.points_total - a.points_total;
-          });
-
-        const div = document.createElement("div");
-        div.innerHTML = `<h3>${team} (Total: ${teamTotals[team].toFixed(2)})</h3>`;
-        const table = document.createElement("table");
-        const thead = document.createElement("thead");
-        thead.innerHTML = "<tr><th>Division</th><th>Fighter</th><th>Points</th></tr>";
-        table.appendChild(thead);
-        const tbody = document.createElement("tbody");
-        teamFighters.forEach(f => {
-          tbody.innerHTML += `<tr>
-            <td>${f.roster_slot}</td>
-            <td>${f.fighter_name}</td>
-            <td>${parseFloat(f.points_total).toFixed(2)}</td>
-          </tr>`;
-        });
-        table.appendChild(tbody);
-        div.appendChild(table);
-        teamsContainer.appendChild(div);
-      });
-
-      // --- ALL FIGHTERS BY POINTS ---
-      const allFightersBody = document.querySelector("#allFighters tbody");
-      allFightersBody.innerHTML = "";
-      fighters
-        .sort((a,b) => b.points_total - a.points_total)
-        .forEach(f => {
-          const row = document.createElement("tr");
-          row.innerHTML = `
-            <td>${f.fighter_name}</td>
-            <td>${f.team_name}</td>
-            <td>${f.roster_slot}</td>
-            <td>${parseFloat(f.points_total).toFixed(2)}</td>
-          `;
-          allFightersBody.appendChild(row);
-        });
-    }
-
-    loadData();
-  </script>
+loadMainPage();
+</script>
 </body>
 </html>
