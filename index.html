@@ -4,45 +4,27 @@
   <meta charset="UTF-8" />
   <title>Fantasy MMA – 2025 Season</title>
 
-  <!-- Supabase JS client -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
   <style>
-    body {
-      background-color: #111;
-      color: #eee;
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
-
-    h1 {
-      margin-bottom: 20px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: #1b1b1b;
-    }
-
-    th, td {
-      padding: 10px;
-      border: 1px solid #333;
-      text-align: left;
-    }
-
-    th {
-      background: #222;
-    }
-
-    tr:nth-child(even) {
-      background: #161616;
-    }
+    body { background: #111; color: #eee; font-family: Arial; padding: 20px; }
+    h1 { margin-bottom: 10px; }
+    select { margin-bottom: 20px; padding: 5px; font-size: 16px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px; border: 1px solid #333; text-align: left; }
+    th { background: #222; }
+    tr:nth-child(even) { background: #161616; }
   </style>
 </head>
 <body>
 
   <h1>Fantasy MMA – 2025 Season</h1>
+
+  <!-- Team selector dropdown -->
+  <label for="teamSelect">Select Team:</label>
+  <select id="teamSelect">
+    <option value="All">All Teams</option>
+  </select>
 
   <table>
     <thead>
@@ -62,45 +44,69 @@
     const SUPABASE_URL = "https://hbhbwuijvbkenncwtbfw.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhiaGJ3dWlqdmJrZW5uY3d0YmZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyOTg5NzksImV4cCI6MjA4Mjg3NDk3OX0.YwKDkbODTXNbQySb8O41MFH1C4dTKnGQ1jZqn3_-orM";
 
-  // 🔹 Create client (rename variable so it doesn't conflict)
-  const supabaseClient = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY
-  );
+    const supabaseClient = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY
+    );
 
-  // 🔹 Load data from the correct table
-  async function loadData() {
-    const { data, error } = await supabaseClient
-      .from("season_fighter_summary") // ✅ Correct table name
-      .select("*")
-      .eq("season", 2025)
-      .order("team_name", { ascending: true });
+    let allData = []; // Store all rows globally
 
-    if (error) {
-      console.error("Supabase error:", error);
-      return;
+    async function loadData() {
+      const { data, error } = await supabaseClient
+        .from("season_fighter_summary")
+        .select("*")
+        .eq("season", 2025)
+        .order("team_name", { ascending: true });
+
+      if (error) {
+        console.error("Supabase error:", error);
+        return;
+      }
+
+      allData = data; // Save all rows
+
+      populateTeamDropdown();
+      renderTable("All"); // Show all by default
     }
 
-    // 🔹 Fill table
-    const tbody = document.querySelector("tbody");
-    tbody.innerHTML = "";
+    function populateTeamDropdown() {
+      const select = document.getElementById("teamSelect");
+      const teams = [...new Set(allData.map(row => row.team_name))].sort();
 
-    data.forEach(row => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${row.team_name}</td>
-        <td>${row.division}</td>
-        <td>${row.fighter_name}</td>
-        <td>${row.points_total}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
+      teams.forEach(team => {
+        const option = document.createElement("option");
+        option.value = team;
+        option.textContent = team;
+        select.appendChild(option);
+      });
 
-  // 🔹 Run immediately
-  loadData();
-</script>
+      select.addEventListener("change", () => {
+        renderTable(select.value);
+      });
+    }
 
+    function renderTable(selectedTeam) {
+      const tbody = document.querySelector("tbody");
+      tbody.innerHTML = "";
+
+      const filtered = selectedTeam === "All" 
+        ? allData 
+        : allData.filter(row => row.team_name === selectedTeam);
+
+      filtered.forEach(row => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${row.team_name}</td>
+          <td>${row.division}</td>
+          <td>${row.fighter_name}</td>
+          <td>${row.points_total}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    loadData();
+  </script>
 
 </body>
 </html>
