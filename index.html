@@ -2,35 +2,41 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Fantasy MMA League</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fantasy MMA – 2025 Season</title>
+
+  <!-- Supabase JS client -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
   <style>
     body {
+      background-color: #111;
+      color: #eee;
       font-family: Arial, sans-serif;
-      background: #0f172a;
-      color: #e5e7eb;
       padding: 20px;
     }
 
     h1 {
-      text-align: center;
+      margin-bottom: 20px;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 20px;
+      background: #1b1b1b;
     }
 
     th, td {
-      border: 1px solid #334155;
-      padding: 8px;
+      padding: 10px;
+      border: 1px solid #333;
       text-align: left;
     }
 
     th {
-      background: #1e293b;
+      background: #222;
+    }
+
+    tr:nth-child(even) {
+      background: #161616;
     }
   </style>
 </head>
@@ -47,34 +53,48 @@
         <th>Points</th>
       </tr>
     </thead>
-    <tbody id="data">
-      <!-- Data will go here -->
+    <tbody>
+      <!-- Data loads here -->
     </tbody>
   </table>
 
   <script>
-    // Temporary test data (no Supabase yet)
-    const testData = [
-      { team: "Shane", division: "Heavyweight", fighter: "Kennedy Nzechukwu", points: 0 },
-      { team: "Dylan", division: "Heavyweight", fighter: "Sergei Pavlovich", points: 2 },
-      { team: "Ken", division: "M Utility", fighter: "Merab Dvalishvili", points: 6.25 },
-      { team: "Brent", division: "M Utility", fighter: "Renier de Ridder", points: 3.5 }
-    ];
+    const SUPABASE_URL = "https://hbhbwuijvbkenncwtbfw.supabase.co";
+    const SUPABASE_ANON_KEY = "Ysb_publishable_qICj4e6_gK-CouGg0qcuzg_6DMme8vC";
 
-    const tbody = document.getElementById("data");
+    const supabase = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY
+    );
 
-    testData.forEach(row => {
-      const tr = document.createElement("tr");
+    async function loadData() {
+      const { data, error } = await supabase
+        .from("fighters")
+        .select("*")
+        .eq("season", 2025)
+        .order("team_name", { ascending: true });
 
-      tr.innerHTML = `
-        <td>${row.team}</td>
-        <td>${row.division}</td>
-        <td>${row.fighter}</td>
-        <td>${row.points}</td>
-      `;
+      if (error) {
+        console.error("Supabase error:", error);
+        return;
+      }
 
-      tbody.appendChild(tr);
-    });
+      const tbody = document.querySelector("tbody");
+      tbody.innerHTML = "";
+
+      data.forEach(row => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${row.team_name}</td>
+          <td>${row.division}</td>
+          <td>${row.fighter_name}</td>
+          <td>${row.points_total}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    loadData();
   </script>
 
 </body>
