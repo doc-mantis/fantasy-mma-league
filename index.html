@@ -4,13 +4,13 @@
   <meta charset="UTF-8" />
   <title>Fantasy MMA – 2025 Season</title>
 
-  <!-- Supabase client -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
   <style>
     body { background: #111; color: #eee; font-family: Arial; padding: 20px; }
     h1 { margin-bottom: 10px; }
-    select { margin-bottom: 20px; padding: 5px; font-size: 16px; }
+    select { margin-bottom: 10px; padding: 5px; font-size: 16px; }
+    #teamTotal { margin-bottom: 20px; font-weight: bold; font-size: 18px; }
     table { width: 100%; border-collapse: collapse; }
     th, td { padding: 10px; border: 1px solid #333; text-align: left; }
     th { background: #222; }
@@ -21,11 +21,13 @@
 
   <h1>Fantasy MMA – 2025 Season</h1>
 
-  <!-- Team selector dropdown -->
   <label for="teamSelect">Select Team:</label>
   <select id="teamSelect">
     <option value="All">All Teams</option>
   </select>
+
+  <!-- Team total points -->
+  <div id="teamTotal"></div>
 
   <table>
     <thead>
@@ -42,7 +44,6 @@
   </table>
 
   <script>
-    // 🔹 Replace with your Supabase project info
     const SUPABASE_URL = "https://hbhbwuijvbkenncwtbfw.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhiaGJ3dWlqdmJrZW5uY3d0YmZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyOTg5NzksImV4cCI6MjA4Mjg3NDk3OX0.YwKDkbODTXNbQySb8O41MFH1C4dTKnGQ1jZqn3_-orM";
 
@@ -51,93 +52,11 @@
       SUPABASE_ANON_KEY
     );
 
-    let allData = []; // store all rows globally
+    let allData = [];
 
-    // Weight rank mapping (heaviest → lightest)
+    // Weight rank mapping (heaviest → lightest), utilities at bottom
     const weightRank = {
       "Heavyweight": 1,
-      "L. Heavyweight": 2,
-      "Middleweight": 3,
-      "Welterweight": 4,
-      "Lightweight": 5,
-      "Featherweight": 6,
-      "Bantamweight": 7,
-      "Flyweight": 8,
-      "W. Bantamweight": 9,
-      "W. Flyweight": 10,
-      "W. Straweight": 11
-    };
 
-    // Load data from Supabase
-    async function loadData() {
-      const { data, error } = await supabaseClient
-        .from("season_fighter_summary")
-        .select("*")
-        .eq("season", 2025)
-        .order("team_name", { ascending: true });
-
-      if (error) {
-        console.error("Supabase error:", error);
-        return;
-      }
-
-      allData = data; // save rows
-      populateTeamDropdown();
-      renderTable("All"); // show all teams by default
-    }
-
-    // Populate dropdown with team names
-    function populateTeamDropdown() {
-      const select = document.getElementById("teamSelect");
-      const teams = [...new Set(allData.map(row => row.team_name))].sort();
-
-      teams.forEach(team => {
-        const option = document.createElement("option");
-        option.value = team;
-        option.textContent = team;
-        select.appendChild(option);
-      });
-
-      select.addEventListener("change", () => {
-        renderTable(select.value);
-      });
-    }
-
-    // Render table based on selected team
-    function renderTable(selectedTeam) {
-      const tbody = document.querySelector("tbody");
-      tbody.innerHTML = "";
-
-      let filtered = selectedTeam === "All"
-        ? [...allData]
-        : allData.filter(row => row.team_name === selectedTeam);
-
-      // Sorting
-      if (selectedTeam === "All") {
-        // Sort by points descending
-        filtered.sort((a, b) => b.points_total - a.points_total);
-      } else {
-        // Sort by weight rank heaviest → lightest
-        filtered.sort((a, b) => (weightRank[a.division] || 99) - (weightRank[b.division] || 99));
-      }
-
-      filtered.forEach(row => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${row.team_name}</td>
-          <td>${row.division}</td>
-          <td>${row.fighter_name}</td>
-          <td>${row.points_total}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    // Load data on page load
-    loadData();
-  </script>
-
-</body>
-</html>
 
 
