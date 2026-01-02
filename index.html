@@ -57,6 +57,102 @@
     // Weight rank mapping (heaviest → lightest), utilities at bottom
     const weightRank = {
       "Heavyweight": 1,
+      "L. Heavyweight": 2,
+      "Middleweight": 3,
+      "Welterweight": 4,
+      "Lightweight": 5,
+      "Featherweight": 6,
+      "Bantamweight": 7,
+      "Flyweight": 8,
+      "W. Bantamweight": 9,
+      "W. Flyweight": 10,
+      "W. Straweight": 11,
+      "M Utility": 12,
+      "W Utility": 13
+    };
+
+    async function loadData() {
+      const { data, error } = await supabaseClient
+        .from("season_fighter_summary")
+        .select("*")
+        .eq("season", 2025)
+        .order("team_name", { ascending: true });
+
+      if (error) {
+        console.error("Supabase error:", error);
+        return;
+      }
+
+      allData = data;
+
+      populateTeamDropdown();
+      renderTable("All");
+    }
+
+    function populateTeamDropdown() {
+      const select = document.getElementById("teamSelect");
+      const teams = [...new Set(allData.map(row => row.team_name))].sort();
+
+      teams.forEach(team => {
+        const option = document.createElement("option");
+        option.value = team;
+        option.textContent = team;
+        select.appendChild(option);
+      });
+
+      select.addEventListener("change", () => {
+        renderTable(select.value);
+      });
+    }
+
+    function renderTable(selectedTeam) {
+      const tbody = document.querySelector("tbody");
+      tbody.innerHTML = "";
+
+      let filtered = selectedTeam === "All"
+        ? [...allData]
+        : allData.filter(row => row.team_name === selectedTeam);
+
+      if (selectedTeam === "All") {
+        // Sort by points descending
+        filtered.sort((a, b) => b.points_total - a.points_total);
+      } else {
+        // Sort by weight rank for team view
+        filtered.sort((a, b) => (weightRank[a.division.trim()] || 99) - (weightRank[b.division.trim()] || 99));
+      }
+
+      filtered.forEach(row => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${row.team_name}</td>
+          <td>${row.division}</td>
+          <td>${row.fighter_name}</td>
+          <td>${row.points_total}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      renderTeamTotal(selectedTeam);
+    }
+
+    function renderTeamTotal(selectedTeam) {
+      if (selectedTeam === "All") {
+        document.getElementById("teamTotal").textContent = "";
+        return;
+      }
+
+      const total = allData
+        .filter(row => row.team_name === selectedTeam)
+        .reduce((sum, row) => sum + parseFloat(row.points_total || 0), 0);
+
+      document.getElementById("teamTotal").textContent = `Team Total Points: ${total}`;
+    }
+
+    loadData();
+  </script>
+
+</body>
+</html>
 
 
 
