@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{{TEAM_NAME}} – Fantasy MMA</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; }
+  th { background-color: #eee; }
+</style>
+</head>
+<body>
+
+<h1>{{TEAM_NAME}} – 2025 Season</h1>
+<h2>Total Points: <span id="teamTotal"></span></h2>
+<table>
+  <thead>
+    <tr><th>Division</th><th>Fighter</th><th>Points</th></tr>
+  </thead>
+  <tbody id="teamRoster"></tbody>
+</table>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script>
+const supabaseClient = supabase.createClient("YOUR_SUPABASE_URL", "YOUR_SUPABASE_ANON_KEY");
+const teamName = "{{TEAM_NAME}}";
+const divisionOrder = ["Heavyweight","L. Heavyweight","Middleweight","Welterweight","Lightweight","Featherweight","Bantamweight","Flyweight","W. Bantamweight","W. Flyweight","W. Straweight","M Utility","W Utility"];
+
+async function loadTeam() {
+  const { data: fighters, error } = await supabaseClient.from('fighter_points_2025').select('*').eq('team_name', teamName);
+  if (error) return console.error(error);
+
+  const totalPoints = fighters.reduce((sum,f)=>sum+parseFloat(f.points_total),0);
+  document.getElementById("teamTotal").textContent = totalPoints.toFixed(2);
+
+  fighters.sort((a,b)=>{
+    const aIndex = divisionOrder.indexOf(a.roster_slot);
+    const bIndex = divisionOrder.indexOf(b.roster_slot);
+    return aIndex - bIndex || b.points_total - a.points_total;
+  });
+
+  const tbody = document.getElementById("teamRoster");
+  tbody.innerHTML = "";
+  fighters.forEach(f=>{
+    tbody.innerHTML += `<tr>
+      <td>${f.roster_slot}</td>
+      <td>${f.fighter_name}</td>
+      <td>${parseFloat(f.points_total).toFixed(2)}</td>
+    </tr>`;
+  });
+}
+
+loadTeam();
+</script>
+</body>
+</html>
