@@ -54,7 +54,7 @@
 
     let allData = [];
 
-    // Weight rank mapping (heaviest → lightest), utilities at bottom
+    // Weight order from heaviest → lightest, utilities last
     const weightRank = {
       "Heavyweight": 1,
       "L. Heavyweight": 2,
@@ -84,7 +84,6 @@
       }
 
       allData = data;
-
       populateTeamDropdown();
       renderTable("All");
     }
@@ -109,18 +108,25 @@
       const tbody = document.querySelector("tbody");
       tbody.innerHTML = "";
 
+      // Filter rows by selected team
       let filtered = selectedTeam === "All"
         ? [...allData]
         : allData.filter(row => row.team_name === selectedTeam);
 
+      // Sorting
       if (selectedTeam === "All") {
         // Sort by points descending
         filtered.sort((a, b) => b.points_total - a.points_total);
       } else {
-        // Sort by weight rank for team view
-        filtered.sort((a, b) => (weightRank[a.division.trim()] || 99) - (weightRank[b.division.trim()] || 99));
+        // Sort by weight rank, utilities at bottom
+        filtered.sort((a, b) => {
+          const rankA = weightRank[a.division.trim()] || 99;
+          const rankB = weightRank[b.division.trim()] || 99;
+          return rankA - rankB;
+        });
       }
 
+      // Populate table
       filtered.forEach(row => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
@@ -132,12 +138,14 @@
         tbody.appendChild(tr);
       });
 
+      // Render team total points
       renderTeamTotal(selectedTeam);
     }
 
     function renderTeamTotal(selectedTeam) {
+      const totalDiv = document.getElementById("teamTotal");
       if (selectedTeam === "All") {
-        document.getElementById("teamTotal").textContent = "";
+        totalDiv.textContent = "";
         return;
       }
 
@@ -145,7 +153,7 @@
         .filter(row => row.team_name === selectedTeam)
         .reduce((sum, row) => sum + parseFloat(row.points_total || 0), 0);
 
-      document.getElementById("teamTotal").textContent = `Team Total Points: ${total}`;
+      totalDiv.textContent = `Team Total Points: ${total}`;
     }
 
     loadData();
@@ -153,6 +161,3 @@
 
 </body>
 </html>
-
-
-
