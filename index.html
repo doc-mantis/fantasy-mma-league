@@ -51,6 +51,21 @@
 
     let allData = []; // Store all rows globally
 
+    // Weight order from heaviest to lightest
+    const weightOrder = [
+      "Heavyweight",
+      "L. Heavyweight",
+      "Middleweight",
+      "Welterweight",
+      "Lightweight",
+      "Featherweight",
+      "Bantamweight",
+      "Flyweight",
+      "W. Bantamweight",
+      "W. Flyweight",
+      "W. Straweight"
+    ];
+
     async function loadData() {
       const { data, error } = await supabaseClient
         .from("season_fighter_summary")
@@ -89,9 +104,18 @@
       const tbody = document.querySelector("tbody");
       tbody.innerHTML = "";
 
-      const filtered = selectedTeam === "All" 
-        ? allData 
+      let filtered = selectedTeam === "All" 
+        ? [...allData] 
         : allData.filter(row => row.team_name === selectedTeam);
+
+      // Sorting
+      if (selectedTeam === "All") {
+        // Sort by points descending
+        filtered.sort((a, b) => b.points_total - a.points_total);
+      } else {
+        // Sort by weight class
+        filtered.sort((a, b) => weightOrder.indexOf(a.division) - weightOrder.indexOf(b.division));
+      }
 
       filtered.forEach(row => {
         const tr = document.createElement("tr");
@@ -110,3 +134,4 @@
 
 </body>
 </html>
+
