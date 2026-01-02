@@ -62,40 +62,45 @@
     const SUPABASE_URL = "https://hbhbwuijvbkenncwtbfw.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhiaGJ3dWlqdmJrZW5uY3d0YmZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyOTg5NzksImV4cCI6MjA4Mjg3NDk3OX0.YwKDkbODTXNbQySb8O41MFH1C4dTKnGQ1jZqn3_-orM";
 
-    const supabaseClient = window.supabase.createClient(
-      SUPABASE_URL,
-      SUPABASE_ANON_KEY
-    );
+  // 🔹 Create client (rename variable so it doesn't conflict)
+  const supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+  );
 
-    async function loadData() {
-      const { data, error } = await supabaseClient
-        .from("season_fighter_summary")
-        .select("*")
-        .eq("season", 2025)
-        .order("team_name", { ascending: true });
+  // 🔹 Load data from the correct table
+  async function loadData() {
+    const { data, error } = await supabaseClient
+      .from("season_fighter_summary") // ✅ Correct table name
+      .select("*")
+      .eq("season", 2025)
+      .order("team_name", { ascending: true });
 
-      if (error) {
-        console.error("Supabase error:", error);
-        return;
-      }
-
-      const tbody = document.querySelector("tbody");
-      tbody.innerHTML = "";
-
-      data.forEach(row => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${row.team_name}</td>
-          <td>${row.division}</td>
-          <td>${row.fighter_name}</td>
-          <td>${row.points_total}</td>
-        `;
-        tbody.appendChild(tr);
-      });
+    if (error) {
+      console.error("Supabase error:", error);
+      return;
     }
 
-    loadData();
-  </script>
+    // 🔹 Fill table
+    const tbody = document.querySelector("tbody");
+    tbody.innerHTML = "";
+
+    data.forEach(row => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${row.team_name}</td>
+        <td>${row.division}</td>
+        <td>${row.fighter_name}</td>
+        <td>${row.points_total}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // 🔹 Run immediately
+  loadData();
+</script>
+
 
 </body>
 </html>
