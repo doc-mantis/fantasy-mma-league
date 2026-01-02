@@ -62,13 +62,13 @@
     const SUPABASE_URL = "https://hbhbwuijvbkenncwtbfw.supabase.co";
     const SUPABASE_ANON_KEY = "Ysb_publishable_qICj4e6_gK-CouGg0qcuzg_6DMme8vC";
 
-    const supabase = window.supabase.createClient(
+    const supabaseClient = window.supabase.createClient(
       SUPABASE_URL,
       SUPABASE_ANON_KEY
     );
 
     async function loadData() {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from("fighters")
         .select("*")
         .eq("season", 2025)
