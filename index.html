@@ -1,221 +1,122 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Fantasy MMA – 2025 Season</title>
-
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-
+  <meta charset="UTF-8">
+  <title>Fantasy MMA Leaderboard</title>
   <style>
-    body { background: #111; color: #eee; font-family: Arial; padding: 20px; }
-    h1 { margin-bottom: 10px; }
-    select { margin-bottom: 10px; padding: 5px; font-size: 16px; }
-    #teamTotal { margin-bottom: 20px; font-weight: bold; font-size: 18px; }
-    #leaderboard { margin-bottom: 20px; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-    th, td { padding: 10px; border: 1px solid #333; text-align: left; }
-    th { background: #222; }
-    tr:nth-child(even) { background: #161616; }
+    body { font-family: sans-serif; padding: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #eee; }
+    .team-header { cursor: pointer; background: #ddd; padding: 10px; margin-top: 10px; }
+    .fighter-table { display: none; margin-bottom: 20px; }
   </style>
 </head>
 <body>
-
   <h1>Fantasy MMA – 2025 Season</h1>
 
-  <!-- League Leaderboard -->
-  <div id="leaderboard">
-    <h2>Team Leaderboard</h2>
-    <ul id="leaderboardList"></ul>
-  </div>
-
-  <!-- Team selector dropdown -->
-  <label for="teamSelect">Select Team:</label>
-  <select id="teamSelect">
-    <option value="All">All Teams</option>
-  </select>
-
-  <!-- Single team total points -->
-  <div id="teamTotal"></div>
-
-  <!-- Fighters Table -->
-  <table>
+  <h2>Team Leaderboard</h2>
+  <table id="team-table">
     <thead>
-      <tr>
-        <th>Team</th>
-        <th>Division</th>
-        <th>Fighter</th>
-        <th>Points</th>
-      </tr>
+      <tr><th>Team</th><th>Total Points</th></tr>
     </thead>
-    <tbody>
-      <!-- Data loads here -->
-    </tbody>
+    <tbody></tbody>
   </table>
 
+  <h2>Teams & Fighters</h2>
+  <div id="teams-container"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script>
-    const SUPABASE_URL = "https://hbhbwuijvbkenncwtbfw.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhiaGJ3dWlqdmJrZW5uY3d0YmZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyOTg5NzksImV4cCI6MjA4Mjg3NDk3OX0.YwKDkbODTXNbQySb8O41MFH1C4dTKnGQ1jZqn3_-orM";
+    const SUPABASE_URL = "YOUR_SUPABASE_URL";
+    const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
 
-    const supabaseClient = window.supabase.createClient(
-      SUPABASE_URL,
-      SUPABASE_ANON_KEY
-    );
+    const supabase = supabase.createClient("https://hbhbwuijvbkenncwtbfw.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhiaGJ3dWlqdmJrZW5uY3d0YmZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyOTg5NzksImV4cCI6MjA4Mjg3NDk3OX0.YwKDkbODTXNbQySb8O41MFH1C4dTKnGQ1jZqn3_-orM");
 
-    let allData = [];
-
-    // Weight order from heaviest → lightest (utilities will be forced to bottom)
-    const weightRank = {
-      "Heavyweight": 1,
-      "L. Heavyweight": 2,
-      "Middleweight": 3,
-      "Welterweight": 4,
-      "Lightweight": 5,
-      "Featherweight": 6,
-      "Bantamweight": 7,
-      "Flyweight": 8,
-      "W. Bantamweight": 9,
-      "W. Flyweight": 10,
-      "W. Straweight": 11,
-      "M Utility": 12,  // fallback if needed
-      "W Utility": 13
-    };
+    // Weight class order from heaviest → lightest
+    const weightOrder = [
+      "Heavyweight","L. Heavyweight","Middleweight","Welterweight",
+      "Lightweight","Featherweight","Bantamweight","Flyweight",
+      "W. Bantamweight","W. Flyweight","W. Straweight","M Utility","W Utility"
+    ];
 
     async function loadData() {
-      const { data, error } = await supabaseClient
-        .from("season_fighter_summary")
-        .select("*")
-        .eq("season", 2025);
+      // Load team leaderboard
+      const { data: teams, error: teamError } = await supabase
+        .from('season_team_summary')
+        .select('*')
+        .order('team_points', { ascending: false });
 
-      if (error) {
-        console.error("Supabase error:", error);
-        return;
-      }
+      if (teamError) { console.error(teamError); return; }
 
-      allData = data;
-
-      populateLeaderboard();
-      populateTeamDropdown();
-      renderTable("All");
-    }
-
-    // Populate team dropdown
-    function populateTeamDropdown() {
-      const select = document.getElementById("teamSelect");
-      const teams = [...new Set(allData.map(row => row.team_name))].sort();
-
+      const teamTbody = document.querySelector('#team-table tbody');
+      teamTbody.innerHTML = '';
       teams.forEach(team => {
-        const option = document.createElement("option");
-        option.value = team;
-        option.textContent = team;
-        select.appendChild(option);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${team.team_name}</td><td>${team.team_points}</td>`;
+        teamTbody.appendChild(tr);
       });
 
-      select.addEventListener("change", () => {
-        renderTable(select.value);
-      });
-    }
+      // Load fighters
+      const { data: fighters, error: fighterError } = await supabase
+        .from('season_fighter_summary')
+        .select('*');
 
-    // Render leaderboard of total points per team
-    function populateLeaderboard() {
-      const leaderboardList = document.getElementById("leaderboardList");
-      leaderboardList.innerHTML = "";
+      if (fighterError) { console.error(fighterError); return; }
 
-      const teamTotals = {};
-
-      allData.forEach(row => {
-        if (!teamTotals[row.team_name]) teamTotals[row.team_name] = 0;
-        teamTotals[row.team_name] += parseFloat(row.points_total || 0);
+      // Group fighters by team
+      const fightersByTeam = {};
+      fighters.forEach(f => {
+        if (!fightersByTeam[f.team_name]) fightersByTeam[f.team_name] = [];
+        fightersByTeam[f.team_name].push(f);
       });
 
-      const sortedTeams = Object.entries(teamTotals)
-        .sort((a, b) => b[1] - a[1]);
+      const container = document.querySelector('#teams-container');
+      container.innerHTML = '';
 
-      sortedTeams.forEach(([team, total]) => {
-        const li = document.createElement("li");
-        li.textContent = `${team}: ${total} points`;
-        leaderboardList.appendChild(li);
-      });
-    }
+      for (const team of teams) {
+        const teamDiv = document.createElement('div');
 
-    // Render fighter table
-    function renderTable(selectedTeam) {
-      const tbody = document.querySelector("tbody");
-      tbody.innerHTML = "";
-
-      let filtered = selectedTeam === "All"
-        ? [...allData]
-        : allData.filter(row => row.team_name === selectedTeam);
-
-      // Sorting
-      if (selectedTeam === "All") {
-        filtered.sort((a, b) => b.points_total - a.points_total);
-      } else {
-        filtered.sort((a, b) => {
-          const aDiv = a.division.trim();
-          const bDiv = b.division.trim();
-
-          // Force utility fighters to the bottom
-          const aIsUtility = aDiv.endsWith("Utility") ? 1 : 0;
-          const bIsUtility = bDiv.endsWith("Utility") ? 1 : 0;
-          if (aIsUtility && !bIsUtility) return 1;
-          if (!aIsUtility && bIsUtility) return -1;
-
-          // Otherwise, sort by weight rank
-          const rankA = weightRank[aDiv] ?? 99;
-          const rankB = weightRank[bDiv] ?? 99;
-          return rankA - rankB;
+        // Team header (click to toggle)
+        const header = document.createElement('div');
+        header.className = 'team-header';
+        header.textContent = `${team.team_name} (${team.team_points} pts)`;
+        header.addEventListener('click', () => {
+          table.style.display = table.style.display === 'none' ? 'table' : 'none';
         });
+
+        // Fighter table
+        const table = document.createElement('table');
+        table.className = 'fighter-table';
+        const thead = document.createElement('thead');
+        thead.innerHTML = `<tr><th>Fighter</th><th>Roster Slot</th><th>Points</th></tr>`;
+        table.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+
+        // Sort fighters: heaviest → lightest, utility at bottom, then by points descending
+        const sortedFighters = fightersByTeam[team.team_name].sort((a,b) => {
+          const aIndex = weightOrder.indexOf(a.roster_slot);
+          const bIndex = weightOrder.indexOf(b.roster_slot);
+          if (aIndex !== bIndex) return aIndex - bIndex; // weight order
+          return b.points_total - a.points_total;       // points within weight
+        });
+
+        sortedFighters.forEach(f => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${f.fighter_name}</td><td>${f.roster_slot}</td><td>${f.points_total}</td>`;
+          tbody.appendChild(tr);
+        });
+
+        table.appendChild(tbody);
+        teamDiv.appendChild(header);
+        teamDiv.appendChild(table);
+        container.appendChild(teamDiv);
       }
-
-      filtered.forEach(row => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${row.team_name}</td>
-          <td>${row.division}</td>
-          <td>${row.fighter_name}</td>
-          <td>${row.points_total}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-
-      renderTeamTotal(selectedTeam);
-    }
-
-    // Render team total above table for single team
-    function renderTeamTotal(selectedTeam) {
-      const totalDiv = document.getElementById("teamTotal");
-      if (selectedTeam === "All") {
-        totalDiv.textContent = "";
-        return;
-      }
-
-      const total = allData
-        .filter(row => row.team_name === selectedTeam)
-        .reduce((sum, row) => sum + parseFloat(row.points_total || 0), 0);
-
-      totalDiv.textContent = `Team Total Points: ${total}`;
     }
 
     loadData();
-
-// Realtime updates
-supabaseClient
-  .channel("season-fighter-updates")
-  .on(
-    "postgres_changes",
-    {
-      event: "*",
-      schema: "public",
-      table: "season_fighter_summary"
-    },
-    () => {
-      console.log("Realtime update received");
-      loadData();
-    }
-  )
-  .subscribe();
-
+    setInterval(loadData, 30000);
   </script>
-
 </body>
 </html>
